@@ -51,4 +51,4 @@ app.use("/api/messages",messageRouter)
 await connectDB();
 
 // Export server for vercel
-export default server;
+export default app;

@@ -7,10 +7,11 @@ import toast from 'react-hot-toast';
 
 function ChatContainer({setShowProfile}) {
 
-  const {messages,selectedUser,setSelectedUser,sendMessage,getMessages} = useContext(ChatContext)
+  const {messages,selectedUser,setSelectedUser,sendMessage,getMessages,deleteMessage} = useContext(ChatContext)
   const {authUser,onlineUsers} = useContext(AuthContext)
   const scrollEnd = useRef();
   const [input,setInput] = useState("")
+  const [messageId, setMessageId] = useState();
 
   // Handle sending a message
   const handleSendMessage = async(e)=>{
@@ -62,11 +63,21 @@ function ChatContainer({setShowProfile}) {
         {/* ------- chat area ------- */}
         <div className='flex flex-col h-[calc(100%-120px)] overflow-y-auto p-3 pb-6'>
           {messages.map((msg,index)=>(
-            <div key={index} className={`flex items-end gap-2 justify-end ${msg.senderId !== authUser._id && 'flex-row-reverse'}`}>
+            <div  key={msg._id} className={`flex items-end gap-2 justify-end ${msg.senderId !== authUser._id && 'flex-row-reverse'}`}>
               {msg.image ? (
                 <img src={msg.image} alt="" className='max-w-[70vw] sm:max-w-[230px] border border-gray-700 rounded-lg overflow-hidden mb-8'/>
               ) : (
+                <div className='flex items-end gap-2'>
                 <p className={`p-2 max-w-[70vw] sm:max-w-[260px] md:max-w-[200px] text-sm font-light rounded-lg mb-8 break-words bg-teal-500/30 text-white ${msg.senderId === authUser._id ? 'rounded-br-none' : 'rounded-bl-none'}`}>{msg.text}</p>
+                {msg.senderId === authUser._id && (
+                <button
+                  onClick={() => deleteMessage(msg._id)}
+                  className="text-xs text-red-400 hover:text-red-600 cursor-pointer"
+                >
+                  delete
+                </button>
+              )}
+              </div>
               )}
               <div className='text-center text-xs'>
                 <img src={msg.senderId === authUser._id ? authUser?.profilePic || assets.avatar_icon :  selectedUser?.profilePic || assets.avatar_icon} alt="" className='w-7 h-7 rounded-full'/>

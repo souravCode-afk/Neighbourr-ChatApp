@@ -88,3 +88,39 @@ export const sendMessage = async(req,res)=>{
         res.json({success:false,message:error.message})
     }
 }
+
+// delete the selected message
+export const deleteMessage = async (req,res) => {
+    try {
+        const { messageId } = req.params; 
+        const userId = req.user._id;
+
+        const msg = await Message.findOne({
+            _id: messageId,
+            senderId: userId
+        });
+
+        if (!msg) {
+            return res.json({
+                success: false,
+                message: "Message not found or not authorized"
+            });
+        }
+
+        await Message.findByIdAndDelete(messageId);
+
+        const receiverSocketId = userSocketMap[msg.receiverId];
+        if (receiverSocketId) {
+            io.to(receiverSocketId).emit("messageDeleted", messageId);
+        }
+
+        return res.json({
+            success: true,
+            message: "Message deleted successfully"
+        });
+
+    } catch (error) {
+        console.log(error.message);
+        res.json({ success: false, message: error.message });
+    }
+};

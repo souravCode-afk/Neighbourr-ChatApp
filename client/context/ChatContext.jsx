@@ -52,9 +52,29 @@ export const ChatProvider = ({children})=>{
             toast.error(error.message)
         }
     }
+
+    const deleteMessage = async (messageId) => {
+    try {
+        const { data } = await axios.delete(`/api/messages/${messageId}`);
+        
+        if (data.success) {
+            setMessages((prev) => prev.filter((msg) => msg._id !== messageId));
+            // toast.success("Message deleted");
+        } else {
+            toast.error(data.message || "Failed to delete message");
+        }
+    } catch (error) {
+        toast.error(error.message);
+    }
+}
     // function to subscribe to messages for selected user
     const subscribeToMessages = async()=>{
         if(!socket) return;
+        socket.on("messageDeleted", (messageId) => {
+            setMessages((prev) =>
+                prev.filter((msg) => msg._id !== messageId)
+            );
+        });
         socket.on("newMessage",(newMessage)=>{
             if(selectedUser && newMessage.senderId === selectedUser._id){
                 newMessage.seen = true;
@@ -72,6 +92,7 @@ export const ChatProvider = ({children})=>{
     // function to unsubscribe from messages
     const unsubscribeFromMessages = ()=>{
         if(socket) socket.off("newMessage")
+        if(socket) socket.off("messageDeleted")
     }
 
     useEffect(()=>{
@@ -89,7 +110,8 @@ export const ChatProvider = ({children})=>{
         sendMessage,
         setSelectedUser,
         unseenMessages,
-        setUnseenMessages
+        setUnseenMessages,
+        deleteMessage
     }
 
     return (

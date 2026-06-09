@@ -54,7 +54,12 @@ io.on("connection",(socket)=>{
         socket.leave(normalizedRoomId);
         console.log(`User ${userId} left room channel: ${normalizedRoomId}`);
     });
-
+    socket.on("room_deleted", (roomId) => {
+    if (!roomId) return;
+    
+    // Broadcast to absolutely everyone online so their dashboard dashboard updates
+    io.emit("room_was_removed", roomId);
+});
     // Handle live messages inside a specific room circle
     socket.on("send_room_message", ({ roomId, text, senderName, clientMessageId }) => {
         const normalizedRoomId = roomId?.toString();
@@ -77,10 +82,7 @@ io.on("connection",(socket)=>{
 // Middleware setup
 app.use(express.json({limit: "10mb"}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cors({
-    origin:'https://neighbourr-frontend.vercel.app',
-    credentials: true
-}));
+app.use(cors());
 
 // Routes setup
 app.get("/api/status",(req,res)=>res.send("Server is live"));

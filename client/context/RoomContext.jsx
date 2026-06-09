@@ -88,20 +88,26 @@ export const RoomProvider = ({ children }) => {
     };
 
     const deleteRoom = async (roomId) => {
-        try {
-            const { data } = await axios.delete(`/api/rooms/${roomId}`);
-            if (data.success) {
-                setRooms((prev) => prev.filter((room) => getRoomId(room) !== roomId));
-                if (getRoomId(selectedRoom) === roomId) {
-                    setSelectedRoom(null);
-                    setRoomMessages([]);
-                }
-                toast.success("Spatial room removed successfully.");
+    try {
+        const { data } = await axios.delete(`/api/rooms/${roomId}`);
+        if (data.success) {
+            // 1. Update your own local UI array state instantly
+            setRooms((prev) => prev.filter((room) => getRoomId(room) !== roomId));
+            if (getRoomId(selectedRoom) === roomId) {
+                setSelectedRoom(null);
+                setRoomMessages([]);
             }
-        } catch (error) {
-            toast.error(error.response?.data?.message || error.message);
+
+            if (socket) {
+                socket.emit("room_deleted", roomId);
+            }
+
+            toast.success("Spatial room removed successfully.");
         }
-    };
+    } catch (error) {
+        toast.error(error.response?.data?.message || error.message);
+    }
+};
 
     useEffect(() => {
         if (!socket || !selectedRoom) return;
@@ -124,6 +130,31 @@ export const RoomProvider = ({ children }) => {
             socket.off("receive_room_message", handleRoomMessage);
         };
     }, [socket, selectedRoom]);
+    
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleRoomRemoved = (deletedRoomId) => {
+            // Remove from the dashboard side-list array immediately
+            setRooms((prevRooms) => prevRooms.filter((room) => getRoomId(room) !== deletedRoomId));
+
+            // Check if this user is currently sitting inside the blown-up room
+            setSelectedRoom((currentRoom) => {
+                if (currentRoom && getRoomId(currentRoom) === deletedRoomId) {
+                    toast.error("The host has dissolved this spatial room anchor.");
+                    setRoomMessages([]);
+                    return null; // Boots them out back to room hub
+                }
+                return currentRoom;
+            });
+        };
+
+        socket.on("room_was_removed", handleRoomRemoved);
+
+        return () => {
+            socket.off("room_was_removed", handleRoomRemoved);
+        };
+    }, [socket]);
 
     const value = {
         rooms,

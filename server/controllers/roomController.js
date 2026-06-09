@@ -6,11 +6,12 @@ import { io } from "../server.js";
 // 1. Create a geo-fenced room
 const createRoom = async (req, res) => {
   try {
-    const { name, longitude, latitude } = req.body;
+    const { name, longitude, latitude, radius } = req.body;
 
     if (!name || longitude === undefined || latitude === undefined) {
       return res.status(400).json({ success: false, message: "Missing required parameters." });
     }
+    const parsedRadius = radius ? parseInt(radius, 10) : 500;
 
     const parsedLng = Number(longitude);
     const parsedLat = Number(latitude);
@@ -19,7 +20,6 @@ const createRoom = async (req, res) => {
       return res.status(400).json({ success: false, message: "Coordinates must be valid numbers." });
     }
 
-    // FIXED: Now building data aligned completely with the new schema constraints
     const newRoom = await Room.create({
       name: name,
       creator: req.user._id, 
@@ -27,7 +27,7 @@ const createRoom = async (req, res) => {
         type: 'Point',
         coordinates: [parsedLng, parsedLat]
       },
-      radius: 500 // ◄ FIXED: Explicitly provide the required radius property
+      radius: parsedRadius 
     });
 
     res.json({ 
@@ -180,7 +180,6 @@ const deleteRoom = async (req, res) => {
   }
 };
 
-// Export all modules together at the bottom cleanly
 export {
   createRoom,
   getVisibleRooms,

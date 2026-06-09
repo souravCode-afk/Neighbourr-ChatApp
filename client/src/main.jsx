@@ -4,12 +4,15 @@ import App from './App.jsx'
 import { BrowserRouter } from 'react-router-dom'
 import { AuthProvider } from '../context/AuthContext.jsx'
 import { ChatProvider } from '../context/ChatContext.jsx'
+import { RoomProvider } from '../context/RoomContext.jsx';
 
 createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <AuthProvider>
       <ChatProvider>
-        <App />
+        <RoomProvider>
+          <App />
+        </RoomProvider>
       </ChatProvider>
     </AuthProvider>
   </BrowserRouter>,

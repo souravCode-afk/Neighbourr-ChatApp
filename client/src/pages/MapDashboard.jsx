@@ -77,7 +77,7 @@ function MapDashboard() {
         name: roomName,
         latitude: userLocation[0],
         longitude: userLocation[1],
-        roomRadius: roomRadius
+        radius: roomRadius
       });
 
       if (success) {
@@ -123,7 +123,7 @@ function MapDashboard() {
       
       {/* FIRST HALF: INTERFACE COLUMN */}
       <div className="h-1/2 md:h-full md:w-1/2 flex flex-col p-6 bg-gray-900/90 backdrop-blur border-b md:border-b-0 md:border-r border-gray-700 overflow-y-auto">
-        <h1 className="text-2xl font-bold tracking-tight mb-6 text-indigo-400">📍 Spatial Chat Core</h1>
+        <h1 className="text-2xl font-bold tracking-tight mb-6 text-indigo-400">Chat Room</h1>
         
         {/* Module A: Create Room Form */}
         <div className="bg-gray-800/60 border border-gray-700 p-4 rounded-xl mb-6 shadow-inner">

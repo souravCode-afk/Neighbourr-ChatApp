@@ -82,10 +82,7 @@ io.on("connection",(socket)=>{
 // Middleware setup
 app.use(express.json({limit: "10mb"}));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
-app.use(cors({
-    origin: 'https://neighbourr-frontend.vercel.app',
-    credentials: true
-}));
+app.use(cors());
 
 // Routes setup
 app.get("/api/status",(req,res)=>res.send("Server is live"));

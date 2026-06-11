@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../../context/AuthContext.jsx'
 import { ChatContext } from '../../context/ChatContext.jsx'
 
+
 function Sidebar() {
     const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages } = useContext(ChatContext)
     const { logout, onlineUsers } = useContext(AuthContext)
@@ -18,7 +19,6 @@ function Sidebar() {
     }, [onlineUsers])
 
     const navigate = useNavigate()
-
     return (
         <div className={`bg-[#2DD4BF]/10 h-full min-h-0 p-4 sm:p-5 md:rounded-r-xl overflow-y-auto text-white ${selectedUser ? "max-md:hidden" : ''}`}>
             <div className='pb-5'>
@@ -71,6 +71,7 @@ function Sidebar() {
                         placeholder='Search User...'
                     />
                 </div>
+                <button className='border bg-[#123D3A] p-2 mt-4 rounded-full border-none text-xs cursor-pointer' onClick={()=>navigate('/MapDashboard') }>Create Room</button>
             </div>
 
             <div className='flex flex-col'>

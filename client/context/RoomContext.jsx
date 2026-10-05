@@ -41,20 +41,49 @@ export const RoomProvider = ({ children }) => {
     };
 
     const createRoom = async (roomData) => {
+    try {
+        const { data } = await axios.post("/api/rooms/create", roomData);
+
+        if (data.success) {
+            toast.success(data.message);
+            if (roomData.isPrivate) {
+                setRooms((prevRooms) => {
+                    if (
+                        prevRooms.some(
+                            (room) => getRoomId(room) === getRoomId(data.room)
+                        )
+                    ) {
+                        return prevRooms;
+                    }
+
+                    return [...prevRooms, data.room];
+                });
+                setSelectedRoom(data.room);
+            }
+            return data.room;
+        }
+    } catch (error) {
+        toast.error(
+            error.response?.data?.message ||
+            "Failed to establish room."
+        );
+    }
+    return null;
+};
+
+    const joinByInviteCode = async (code) => {
+        if (!code?.trim()) return null;
         try {
-            const { data } = await axios.post("/api/rooms/create", roomData);
+            const { data } = await axios.post("/api/rooms/join-private", { inviteCode: code.trim() });
             if (data.success) {
-                toast.success(data.message);
-                if (userLocation) {
-                    fetchNearbyRooms(userLocation[0], userLocation[1]);
-                }
-                return true;
+                setSelectedRoom(data.room);
+                toast.success(`Joined private room: ${data.room.name}`);
+                return data.room;
             }
         } catch (error) {
-            toast.error(error.response?.data?.message || "Failed to establish room.");
+            toast.error(error.response?.data?.message || "Invalid invite code.");
         }
-
-        return false;
+        return null;
     };
 
     const getRoomMessages = async (roomId) => {
@@ -108,6 +137,31 @@ export const RoomProvider = ({ children }) => {
         toast.error(error.response?.data?.message || error.message);
     }
 };
+    useEffect(() => {
+    if (!socket) {
+        console.log("NO SOCKET");
+        return;
+    }
+
+    const handleRoomCreated = (newRoom) => {
+        setRooms((prevRooms) => {
+            if (
+                prevRooms.some(
+                    (room) => getRoomId(room) === getRoomId(newRoom)
+                )
+            ) {
+                return prevRooms;
+            }
+            return [...prevRooms, newRoom];
+        });
+    };
+
+    socket.on("room_created", handleRoomCreated);
+
+    return () => {
+        socket.off("room_created", handleRoomCreated);
+    };
+}, [socket]);
 
     useEffect(() => {
         if (!socket || !selectedRoom) return;
@@ -169,7 +223,8 @@ export const RoomProvider = ({ children }) => {
         getRoomMessages,
         createRoom,
         deleteRoom,
-        sendRoomMessage
+        sendRoomMessage,
+        joinByInviteCode
     };
 
     return (

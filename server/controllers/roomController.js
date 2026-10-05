@@ -3,10 +3,20 @@ import Room from '../models/Room.js';
 import RoomMessage from "../models/RoomMessage.js";
 import { io } from "../server.js";
 
+// Helper: generate a short unique invite code
+const generateInviteCode = () => {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = 'NEIGH-';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+};
+
 // 1. Create a geo-fenced room
 const createRoom = async (req, res) => {
   try {
-    const { name, longitude, latitude, radius } = req.body;
+    const { name, longitude, latitude, radius, isPrivate } = req.body;
 
     if (!name || longitude === undefined || latitude === undefined) {
       return res.status(400).json({ success: false, message: "Missing required parameters." });
@@ -20,6 +30,20 @@ const createRoom = async (req, res) => {
       return res.status(400).json({ success: false, message: "Coordinates must be valid numbers." });
     }
 
+    // Generate invite code if private room
+    let inviteCode = undefined;
+    if (isPrivate) {
+      let unique = false;
+      while (!unique) {
+        const candidate = generateInviteCode();
+        const existing = await Room.findOne({ inviteCode: candidate });
+        if (!existing) {
+          inviteCode = candidate;
+          unique = true;
+        }
+      }
+    }
+
     const newRoom = await Room.create({
       name: name,
       creator: req.user._id, 
@@ -27,13 +51,22 @@ const createRoom = async (req, res) => {
         type: 'Point',
         coordinates: [parsedLng, parsedLat]
       },
-      radius: parsedRadius 
+      radius: parsedRadius,
+      isPrivate: !!isPrivate,
+      inviteCode: inviteCode
     });
 
+    const roomData = {
+      ...newRoom.toObject(),
+      creatorName: req.user.fullName
+    };
+    if (!newRoom.isPrivate) {
+      io.emit("room_created", roomData);
+    }
     res.json({ 
       success: true, 
       message: "Chatroom created successfully!", 
-      room: newRoom 
+      room: roomData 
     });
 
   } catch (error) {
@@ -45,7 +78,7 @@ const createRoom = async (req, res) => {
   }
 };
 
-// 2. Fetch nearby allowed rooms
+// 2. Fetch nearby allowed rooms (public only)
 const getVisibleRooms = async (req, res) => {
   try {
     const { lng, lat } = req.query;
@@ -70,7 +103,26 @@ const getVisibleRooms = async (req, res) => {
       },
       {
         $match: {
-          $expr: { $lte: ["$distanceFromUser", "$radius"] }
+          $expr: { $lte: ["$distanceFromUser", "$radius"] },
+          isPrivate: { $ne: true }  // Exclude private rooms from public listing
+        }
+      },
+      {
+        $lookup: {
+          from: "users",
+          localField: "creator",
+          foreignField: "_id",
+          as: "creatorData"
+        }
+      },
+      {
+        $addFields: {
+          creatorName: { $arrayElemAt: ["$creatorData.fullName", 0] }
+        }
+      },
+      {
+        $project: {
+          creatorData: 0
         }
       }
     ]);
@@ -88,7 +140,7 @@ const getVisibleRooms = async (req, res) => {
 // 3. Get detailed info about a single room
 const getRoomDetails = async (req, res) => {
   try {
-    const room = await Room.findById(req.params.id).populate("creator", "name profilePic");
+    const room = await Room.findById(req.params.id).populate("creator", "fullName profilePic");
     if (!room) {
       return res.status(404).json({ success: false, message: "Room not found." });
     }
@@ -180,11 +232,41 @@ const deleteRoom = async (req, res) => {
   }
 };
 
+// 7. Join a private room via invite code
+const joinByInviteCode = async (req, res) => {
+  try {
+    const { inviteCode } = req.body;
+
+    if (!inviteCode?.trim()) {
+      return res.status(400).json({ success: false, message: "Invite code is required." });
+    }
+
+    const room = await Room.findOne({ inviteCode: inviteCode.trim().toUpperCase() });
+
+    if (!room) {
+      return res.status(404).json({ success: false, message: "Invalid invite code. Room not found." });
+    }
+
+    // Populate creator name for the frontend
+    const populatedRoom = await Room.findById(room._id).populate("creator", "fullName profilePic");
+    const roomData = {
+      ...populatedRoom.toObject(),
+      creatorName: populatedRoom.creator?.fullName || "Unknown"
+    };
+
+    res.status(200).json({ success: true, room: roomData });
+  } catch (error) {
+    console.error("Error joining private room:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 export {
   createRoom,
   getVisibleRooms,
   getRoomDetails,
   getRoomMessages,
   sendRoomMessage,
-  deleteRoom
+  deleteRoom,
+  joinByInviteCode
 };

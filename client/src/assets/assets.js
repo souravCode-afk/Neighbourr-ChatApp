@@ -18,6 +18,7 @@ import pic1 from './pic1.png'
 import pic2 from './pic2.png'
 import pic3 from './pic3.png'
 import pic4 from './pic4.png'
+import favicon from './favicon.svg'
 import img1 from './img1.jpg'
 import img2 from './img2.jpg'
 
@@ -26,8 +27,9 @@ const assets = {
     gallery_icon,
     help_icon,
     logo_big,
-    logo_icon,
-    logo: logo_big,
+    logo_icon: favicon,
+    favicon,
+    logo: favicon,
     search_icon,
     send_button,
     menu_icon,

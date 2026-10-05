@@ -53,6 +53,33 @@ export const AuthProvider = ({children})=>{
         }
     }
 
+        const googleLogin = async (credential) => {
+        try {
+            const { data } = await axios.post("/api/auth/google", {
+                credential
+            });
+
+            if (data.success) {
+                setAuthUser(data.userData);
+                connectSocket(data.userData);
+
+                axios.defaults.headers.common["token"] = data.token;
+
+                setToken(data.token);
+                localStorage.setItem("token", data.token);
+
+                toast.success(data.message);
+            } else {
+                toast.error(data.message);
+            }
+
+        } catch (error) {
+            toast.error(
+                error.response?.data?.message || error.message
+            );
+        }
+    };
+
     // Logout function to handle user logout and socket disconnection
 
     const logout = async()=>{
@@ -109,6 +136,7 @@ export const AuthProvider = ({children})=>{
         socket,
         loading,
         login,
+        googleLogin,
         logout,
         updateProfile
     }

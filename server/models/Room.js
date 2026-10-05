@@ -18,7 +18,10 @@ const RoomSchema = new mongoose.Schema({
   },
   
   // FIXED: Changed required to false and provided a clean default fallback
-  radius: { type: Number, default: 500 } 
+  radius: { type: Number, default: 500 },
+
+  isPrivate: { type: Boolean, default: false },
+  inviteCode: { type: String, unique: true, sparse: true }
 });
 
 RoomSchema.index({ location: '2dsphere' });

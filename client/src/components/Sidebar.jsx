@@ -4,11 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import { AuthContext } from '../../context/AuthContext.jsx'
 import { ChatContext } from '../../context/ChatContext.jsx'
 
-
 function Sidebar() {
     const { getUsers, users, selectedUser, setSelectedUser, unseenMessages, setUnseenMessages } = useContext(ChatContext)
     const { logout, onlineUsers } = useContext(AuthContext)
-    
+
     const [input, setInput] = useState("");
     const [isMenuOpen, setIsMenuOpen] = useState(false);
 
@@ -19,87 +18,104 @@ function Sidebar() {
     }, [onlineUsers])
 
     const navigate = useNavigate()
+
     return (
-        <div className={`bg-[#2DD4BF]/10 h-full min-h-0 p-4 sm:p-5 md:rounded-r-xl overflow-y-auto text-white ${selectedUser ? "max-md:hidden" : ''}`}>
-            <div className='pb-5'>
-                <div className='flex justify-between items-center'>
-                    <img src={assets.logo} alt="logo" className='max-w-40' />
-                    
-                    {/*------- Menu -------*/}
-                    <div className='relative py-2'>
-                        <img 
-                            onClick={() => setIsMenuOpen(!isMenuOpen)} 
-                            src={assets.menu_icon} 
-                            alt="Menu" 
-                            className='max-h-5 cursor-pointer relative z-30' 
-                        />
-                    
+        <div className={`glass-panel h-full min-h-0 p-5 md:rounded-l-3xl md:rounded-r-none border-r-0 sm:border-r border-dark-border flex flex-col z-10 ${selectedUser ? "hidden md:flex" : "flex"}`}>
+            {/* Header Area */}
+            <div className='pb-6'>
+                <div className='flex justify-between items-center mb-6'>
+                    <div className='flex items-center gap-3'>
+                        <div className="w-9 h-9 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center shadow-[0_0_20px_rgba(20,184,166,0.45)]">
+                            <img src={assets.favicon} alt="Neighbourr" className="w-5 h-5 object-contain drop-shadow-[0_0_8px_rgba(20,184,166,0.7)]" />
+                        </div>
+                        <span className="font-heading font-bold text-xl tracking-tight text-white">Neighbourr</span>
+                    </div>
+
+                    {/* Menu */}
+                    <div className='relative'>
+                        <button
+                            onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            className='p-2 hover:bg-white/5 rounded-full transition-colors'
+                        >
+                            <img src={assets.menu_icon} alt="Menu" className='w-5 h-5 opacity-70 hover:opacity-100 transition-opacity' />
+                        </button>
+
                         {isMenuOpen && (
                             <>
-                                <div 
-                                    className='fixed inset-0 z-10' 
-                                    onClick={() => setIsMenuOpen(false)} 
-                                />
-                                
-                                <div className='absolute top-full right-0 z-20 w-32 p-4 sm:p-5 rounded-md bg-[#123D3A] border border-teal-700 text-gray-100 execution-context-fix'>
-                                    <p 
-                                        onClick={() => { navigate('/profile'); setIsMenuOpen(false); }} 
-                                        className='cursor-pointer text-sm hover:text-teal-400 transition-colors'
-                                    >
+                                <div className='fixed inset-0 z-10' onClick={() => setIsMenuOpen(false)} />
+                                <div className='absolute top-full right-0 mt-2 z-20 w-40 p-2 rounded-xl bg-dark-surface border border-dark-border shadow-2xl backdrop-blur-xl'>
+                                    <button onClick={() => { navigate('/profile'); setIsMenuOpen(false); }} className='w-full text-left px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-white/5 rounded-lg transition-colors'>
                                         Edit Profile
-                                    </p>
-                                    <hr className='my-2 border-t border-gray-500'/>
-                                    <p 
-                                        onClick={() => { logout(); setIsMenuOpen(false); }} 
-                                        className='cursor-pointer text-sm hover:text-red-400 transition-colors'
-                                    >
+                                    </button>
+                                    <div className='h-px bg-white/5 my-1' />
+                                    <button onClick={() => { logout(); setIsMenuOpen(false); }} className='w-full text-left px-3 py-2 text-sm text-red-400 hover:bg-red-400/10 rounded-lg transition-colors'>
                                         Logout
-                                    </p>
+                                    </button>
                                 </div>
                             </>
                         )}
                     </div>
                 </div>
 
-                <div className='bg-[#123D3A] rounded-full flex items-center gap-2 py-3 px-4 mt-5'>
-                    <img src={assets.search_icon} alt="Search" className='w-3'/>
-                    <input 
-                        onChange={(e) => setInput(e.target.value)} 
+                {/* Search Bar */}
+                <div className='glass-input rounded-xl flex items-center gap-3 px-4 py-3'>
+                    <img src={assets.search_icon} alt="Search" className='w-4 opacity-50' />
+                    <input
+                        onChange={(e) => setInput(e.target.value)}
                         value={input}
-                        type="text" 
-                        className='bg-transparent border-none outline-none text-white text-xs placeholder-[#c8c8c8] flex-1 min-w-0' 
-                        placeholder='Search User...'
+                        type="text"
+                        className='bg-transparent border-none outline-none text-white text-sm placeholder-gray-500 w-full font-sans'
+                        placeholder='Search users...'
                     />
                 </div>
-                <button className='border bg-[#123D3A] p-2 mt-4 rounded-full border-none text-xs cursor-pointer' onClick={()=>navigate('/MapDashboard') }>Create Room</button>
             </div>
 
-            <div className='flex flex-col'>
-                {filteredUsers.map((user, index) => (
-                    <div 
-                        onClick={() => {
-                            setSelectedUser(user);
-                            setUnseenMessages((prev) => ({ ...prev, [user._id]: 0 }));
-                        }}
-                        key={user._id || index} 
-                        className={`relative flex items-center gap-3 p-2 pl-3 sm:pl-4 rounded cursor-pointer text-sm ${selectedUser?._id === user._id && 'bg-[#123D3A]/70'}`}
-                    >
-                        <img src={user?.profilePic || assets.avatar_icon} alt="" className='w-[35px] aspect-[1/1] rounded-full'/>
-                        <div className='flex min-w-0 flex-col leading-5'>
-                            <p className='truncate'>{user.fullName}</p>
-                            {onlineUsers.includes(user._id) ? (
-                                <span className='text-green-400 text-xs'>Online</span>
-                            ) : (
-                                <span className='text-neutral-400 text-xs'>Offline</span>
+            {/* User List */}
+            <div className='flex-1 overflow-y-auto pr-2 space-y-1'>
+                {filteredUsers.map((user, index) => {
+                    const isSelected = selectedUser?._id === user._id;
+                    const isOnline = onlineUsers.includes(user._id);
+                    return (
+                        <div
+                            onClick={() => {
+                                setSelectedUser(user);
+                                setUnseenMessages((prev) => ({ ...prev, [user._id]: 0 }));
+                            }}
+                            key={user._id || index}
+                            className={`group relative flex items-center gap-3 p-3 rounded-2xl cursor-pointer transition-all duration-200 ${isSelected ? 'bg-brand-500/15 border border-brand-500/30 shadow-[inset_0_0_20px_rgba(99,102,241,0.05)]' : 'hover:bg-white/5 border border-transparent'}`}
+                        >
+                            <div className="relative">
+                                <img src={user?.profilePic || assets.avatar_icon} alt="" className='w-12 h-12 object-cover rounded-full ring-2 ring-transparent group-hover:ring-brand-500/30 transition-all' />
+                                {isOnline && (
+                                    <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-dark-surface rounded-full"></span>
+                                )}
+                            </div>
+
+                            <div className='flex-1 min-w-0'>
+                                <p className={`truncate font-medium text-sm ${isSelected ? 'text-white' : 'text-gray-200'}`}>{user.fullName}</p>
+                                <p className={`truncate text-xs mt-0.5 ${isOnline ? 'text-brand-300' : 'text-gray-500'}`}>
+                                    {isOnline ? 'Active now' : 'Offline'}
+                                </p>
+                            </div>
+
+                            {unseenMessages[user._id] > 0 && (
+                                <div className='w-5 h-5 flex justify-center items-center rounded-full bg-brand-500 text-[10px] font-bold text-white shadow-[0_0_10px_rgba(99,102,241,0.5)]'>
+                                    {unseenMessages[user._id]}
+                                </div>
                             )}
                         </div>
-                        {unseenMessages[user._id] > 0 && (
-                            <p className='absolute top-4 right-4 text-xs h-5 w-5 flex justify-center items-center rounded-full bg-teal-500/60'>
-                                {unseenMessages[user._id]}
-                            </p>
-                        )}
-                    </div>
-                ))}
+                    )
+                })}
+            </div>
+
+            {/* Footer Area - Create Room */}
+            <div className='pt-4 mt-2 border-t border-white/5'>
+                <button className='w-full btn-primary py-3 text-sm rounded-xl font-medium tracking-wide flex items-center justify-center gap-2' onClick={() => navigate('/MapDashboard')}>
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                    </svg>
+                    Create Spatial Room
+                </button>
             </div>
         </div>
     )

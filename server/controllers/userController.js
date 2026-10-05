@@ -2,6 +2,95 @@ import { generateToken } from "../lib/utils.js"
 import User from "../models/User.js"
 import bcrypt from "bcryptjs"
 import cloudinary from "../lib/cloudinary.js"
+import { OAuth2Client } from "google-auth-library";
+
+// Allow clock tolerance (24h) to prevent "Token used too early" if host system time drifts
+OAuth2Client.CLOCK_SKEW_SECS_ = 86400;
+
+const googleClient = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID
+);
+
+export const googleLogin = async (req, res) => {
+    try {
+        const { credential } = req.body;
+
+        if (!credential) {
+            return res.json({
+                success: false,
+                message: "Google credential is required"
+            });
+        }
+
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+
+        const payload = ticket.getPayload();
+
+        const {
+            sub: googleId,
+            email,
+            name,
+            picture
+        } = payload;
+
+        if (!email || !googleId) {
+            return res.json({
+                success: false,
+                message: "Invalid Google account"
+            });
+        }
+
+        // Check if user already exists
+        let user = await User.findOne({ email });
+
+        // Existing user
+        if (user) {
+
+            // Link Google account if not already linked
+            if (!user.googleId) {
+                user.googleId = googleId;
+
+                if (!user.profilePic && picture) {
+                    user.profilePic = picture;
+                }
+
+                await user.save();
+            }
+
+        } 
+        // New user
+        else {
+
+            user = await User.create({
+                email,
+                fullName: name,
+                googleId,
+                profilePic: picture || "",
+                bio: ""
+            });
+        }
+
+        const token = generateToken(user._id);
+
+        return res.json({
+            success: true,
+            userData: user,
+            token,
+            message: "Google login successful"
+        });
+
+    } catch (error) {
+        console.log("Google login error:", error.message);
+
+        return res.json({
+            success: false,
+            message: "Google authentication failed"
+        });
+    }
+};
 
 // Signup a new user
 export const signup = async(req,res)=>{

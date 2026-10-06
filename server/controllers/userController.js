@@ -8,7 +8,7 @@ import { OAuth2Client } from "google-auth-library";
 OAuth2Client.CLOCK_SKEW_SECS_ = 86400;
 
 const googleClient = new OAuth2Client(
-    process.env.GOOGLE_CLIENT_ID
+    process.env.VITE_GOOGLE_CLIENT_ID
 );
 
 export const googleLogin = async (req, res) => {
@@ -24,7 +24,7 @@ export const googleLogin = async (req, res) => {
 
         const ticket = await googleClient.verifyIdToken({
             idToken: credential,
-            audience: process.env.GOOGLE_CLIENT_ID
+            audience: process.env.VITE_GOOGLE_CLIENT_ID
         });
 
         const payload = ticket.getPayload();

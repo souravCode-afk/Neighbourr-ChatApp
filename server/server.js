@@ -15,7 +15,7 @@ const app = express();
 const server = http.createServer(app)
 
 
-const clientUrl = process.env.CLIENT_URL || "*";
+const clientUrl = process.env.VITE_CLIENT_URL || "*";
 
 export const io = new Server(server, {
     cors: { origin: clientUrl, credentials: true }
